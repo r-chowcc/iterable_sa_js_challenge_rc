@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<head>
+    <title>Iterable SA JS Challenge</title>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+    
+
+
+    const iterableBaseUrl = 'https://app.iterable.com/api/'
+    const token = 'ff288e91e5f9442cb6ce6ea238886298' // YOUR_API_KEY
+    const email = 'rebeccawchow1+3@gmail.com' // YOUR_TEST_USER_EMAIL
+    
+    const method = {
+        ADD_USER: {
+            type: 'user',
+            description: 'Creating User in Iterable',
+            endpoint: 'users/update',
+            payload: {
+                email: email,
+                dataFields: {
+                    firstName: 'Rebecca',
+                    isWebUser: true,
+                    SA_WebUser_Test_Key: 'completed'
+                } 
+            }
+        },
+        CUSTOM_EVENT: {
+            type: 'event',
+            description: 'Sends Custom Event',
+            endpoint: 'events/track',
+            payload: {
+                eventName:'webSATestEvent',
+                email: email,
+                dataFields: {
+                    platform: 'web',
+                    isTestEvent: true,
+                    url: 'https://iterable.com/sa-test/rebecca',
+                    secret_code_key: 'Code_2022'
+                } 
+            }
+        },
+    GET_INAPP: {
+            type: 'inapp',
+            description: 'Gets In-App Message',
+            endpoint: 'inApp/getMessages',
+            params: {
+                email: email,
+                count: 5,
+                platform: 'iOS',
+                SDKVersion: 'None',
+                packageName: 'None'
+            }
+    }
+}
+
+
+
+    var display = {
+        type: '',
+        endpoint: '',
+        queryParams: '',
+        body: '',
+        resCode: '',
+        resBody: '',
+    }
+
+    const post = (user) => {
+
+        display.type = user.description
+        display.endpoint = user.endpoint
+        display.body = JSON.stringify(user.payload,null,'\t');
+        display.queryParams = 'None';
+        display.resCode = '';
+        display.resBody = '';
+
+        axios.post(iterableBaseUrl + user.endpoint, user.payload, {
+            headers: {
+                'Api-Key': token 
+            }
+        })
+        .then((res) => {
+            console.log(res.data)
+            display.resCode = res.status
+            display.resBody = JSON.stringify(res.data,null,'\t')
+            updateUI(false);
+        })
+        .catch((error) => {
+            console.error(error)
+        })
+    }
+
+const get = async (inapp) => {
+
+    display.type = inapp.description
+    display.endpoint = inapp.endpoint
+    display.queryParams = JSON.stringify(inapp.params,null,'\t');
+    display.body = 'None';
+    display.resCode = '';
+    display.resBody = '';
+
+    axios.get(iterableBaseUrl + inapp.endpoint, {
+        params: inapp.params,
+        headers: {
+            'Api-Key': token 
+        }
+    })
+    .then((res) => {
+        
+        display.resCode = res.status
+
+        var html = '';
+        res.data.inAppMessages.forEach(function(message){
+            html += message.content.html;
+        });
+        display.resBody = html;
+        updateUI(true);
+    })
+    .catch((error) => {
+        console.error(error)
+    })
+
+}
+
+
+
+ const updateUI = (asHTML) => {
+    $('#type').text(display.type)
+    $('#endpoint').text(display.endpoint)
+    $('#queryParams').text(display.queryParams);
+    $('#body').text(display.body)
+    if(asHTML){
+        $('#respBody').html(display.resBody)
+    }else{
+        $('#respBody').text(display.resBody)
+    }
+    $('#resCode').text(display.resCode)
+ }
+
+
+
+
+</script>
+
+</head>
+
+<h1>Iterable SA JS Challenge</h1>
+Create User in Iterable<br>
+<input type="button" value="Add User" id="user"/>
+<p></p>
+Send Custom Event<br>
+<input type="button" value="Send Custom Event" id="event"/>
+<p></p>
+Get In-App Message<br>
+<input type="button" value="Get In-App Message" id="inapp"/>
+
+
+
+<p></p>
+<h3>Request to Iterable</h3>
+<div style="background-color: rgb(215, 215, 215);">
+    <strong>type:</strong> <span id="type"></span><br><br>
+    <strong>endpoint:</strong> <span id="endpoint"></span><br><br>
+    <strong>queryParams:</strong> <pre id="queryParams"></pre>
+    <strong>body:</strong> <pre id="body"></pre>
+</div>
+
+<p></p>
+<h3>Response from Iterable</h3>
+<div style="background-color: rgb(215, 215, 215);">
+    <strong>status:</strong> <span id="resCode"></span><br><br>
+    <strong>response body:</strong> <pre id="respBody"></pre><br><br>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#user, #event, #inapp').click(function(){
+            switch(this.id.replace('#', '')) {
+                case 'user':
+                    post(method.ADD_USER)
+                    break    
+                case 'event':
+                    post(method.CUSTOM_EVENT)
+                    break 
+                case 'inapp':
+                    get(method.GET_INAPP)
+                    break 
+            }
+        });
+    });
+</script>
+
+
+</html>
